@@ -60,7 +60,7 @@ get_lineage("Homo sapiens")
 is_member("Tyrannosaurus", "Theropoda")
 ```
 
-📦 CRAN page: [https://cran.r-project.org/web/packages/taxodist/index.html](https://cran.r-project.org/web/packages/taxodist/index.html)
+CRAN page: [https://cran.r-project.org/web/packages/taxodist/index.html](https://cran.r-project.org/web/packages/taxodist/index.html)
 
 ---
 
@@ -68,9 +68,9 @@ is_member("Tyrannosaurus", "Theropoda")
 
 The distance between two taxa A and B is defined as:
 
-$$d(A, B) = \frac{1}{depth_{MRCA}}$$
+$$d(A, B) = \frac{1}{\text{depth}(\text{MRCA}(A, B))}$$
 
-where *MRCA* is the Most Recent Common Ancestor of A and B in The Taxonomicon hierarchy, and *depth* is its position from the root. Taxa that share a more recent (deeper) ancestor receive a **smaller** distance value; taxa with no common ancestor below the root receive distance **∞**.
+where MRCA is the Most Recent Common Ancestor of A and B in The Taxonomicon hierarchy, and *depth* is its position from the root. Taxa that share a more recent (deeper) ancestor receive a **smaller** distance value; taxa with no common ancestor below the root receive distance **∞**.
 
 ---
 
