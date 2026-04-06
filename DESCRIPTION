@@ -1,0 +1,5 @@
+Package: taxodist_app
+Type: Shiny
+Title: Taxodist Explorer
+Depends: R (>= 4.0)
+Imports: shiny, bslib, taxodist, ggplot2, ggdendro, DT
