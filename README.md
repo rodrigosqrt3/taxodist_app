@@ -6,9 +6,7 @@
 [![License: GPL-3](https://img.shields.io/badge/license-GPL--3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
 [![R](https://img.shields.io/badge/built%20with-R-276DC3?logo=r&logoColor=white)](https://www.r-project.org/)
 
-A Shiny web application for computing **taxonomic distances and exploring phylogenetic lineages**, powered by the [taxodist](https://cran.r-project.org/web/packages/taxodist/index.html) R package and [The Taxonomicon](https://taxonomicon.taxonomy.nl/) database.
-
-> **No R installation required** — just open the app in your browser and start exploring.
+A Shiny web application for computing taxonomic distances and exploring phylogenetic lineages, powered by the [taxodist](https://cran.r-project.org/web/packages/taxodist/index.html) R package and [The Taxonomicon](https://taxonomicon.taxonomy.nl/) database.
 
 ---
 
@@ -25,17 +23,11 @@ The app exposes the main functions of the `taxodist` package through an interact
 | Tab | Description |
 |-----|-------------|
 | **Pairwise Distance** | Compute the taxonomic distance between any two taxa, with full lineage comparison and MRCA highlighted |
-| **Distance Matrix** | Build a pairwise distance matrix for a list of taxa, with an interactive table and a publication-ready dendrogram |
+| **Distance Matrix** | Build a pairwise distance matrix for a list of taxa, with an interactive table and a dendrogram |
 | **Closest Relative** | Given a query taxon and a set of candidates, rank them by taxonomic proximity |
 | **Lineage Explorer** | Retrieve the full lineage of any taxon and check clade membership |
 | **Coverage Check** | Verify which taxa in a list are present in The Taxonomicon database |
 | **Filter by Clade** | Filter a list of taxa, retaining only those belonging to a given clade |
-
----
-
-## Screenshots
-
-> *(Add screenshots here — e.g. `docs/screenshot_matrix.png`)*
 
 ---
 
@@ -70,35 +62,7 @@ The distance between two taxa A and B is defined as:
 
 $$d(A, B) = \frac{1}{\text{depth}(\text{MRCA}(A, B))}$$
 
-where MRCA is the Most Recent Common Ancestor of A and B in The Taxonomicon hierarchy, and *depth* is its position from the root. Taxa that share a more recent (deeper) ancestor receive a **smaller** distance value; taxa with no common ancestor below the root receive distance **∞**.
-
----
-
-## Running locally
-
-```r
-# Install dependencies
-install.packages(c("shiny", "bslib", "taxodist", "ggplot2", "ggdendro", "DT"))
-
-# Clone this repo and run
-shiny::runApp("app.R")
-```
-
-Or with `{pak}`:
-
-```r
-pak::pak(c("shiny", "bslib", "taxodist", "ggplot2", "ggdendro", "DT"))
-```
-
----
-
-## Repository structure
-
-```
-taxodist_app/
-├── app.R          # Single-file Shiny app (ui + server)
-└── README.md
-```
+where MRCA is the Most Recent Common Ancestor of A and B in The Taxonomicon hierarchy, and depth is its position from the root. Taxa that share a more recent (deeper) ancestor receive a smaller distance value; taxa with no common ancestor below the root receive distance **∞**.
 
 ---
 
