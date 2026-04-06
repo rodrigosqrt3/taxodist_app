@@ -12,9 +12,9 @@ A Shiny web application for computing **taxonomic distances and exploring phylog
 
 ---
 
-## 🌿 Live App
+## Live App
 
-👉 **[https://3w6g1b-rodrigo-villa.shinyapps.io/taxodist_app/](https://3w6g1b-rodrigo-villa.shinyapps.io/taxodist_app/)**
+**[https://3w6g1b-rodrigo-villa.shinyapps.io/taxodist_app/](https://3w6g1b-rodrigo-villa.shinyapps.io/taxodist_app/)**
 
 ---
 
