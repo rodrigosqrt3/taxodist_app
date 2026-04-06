@@ -705,7 +705,6 @@ server <- function(input, output, session) {
     }
 
     # ── 3. Build segment data ─────────────────────────────────────────────────
-    # For each internal node i, we draw 3 segments:
     #   (a) vertical connector between the two children's y positions, at height px
     #   (b) horizontal drop from left  child y to its own merge height (or 0 if leaf)
     #   (c) horizontal drop from right child y to its own merge height (or 0 if leaf)
@@ -757,33 +756,27 @@ server <- function(input, output, session) {
     # ── 6. Plot ────────────────────────────────────────────────────────────────
     max_dist  <- max(hc$height)
     max_chars <- max(nchar(hc$labels))
-    # Labels live at negative y (right side in reversed scale).
-    # Gap between line tip and label start:
-    label_gap   <- max_dist * 0.04
-    # Total space needed for label text (approximate):
+    label_gap   <- max_dist * 0.000001
     label_width <- max_chars * max_dist * 0.018
 
     ggplot() +
       geom_segment(data = seg_list,
                    aes(x = x, xend = xend, y = y, yend = yend),
                    colour = "#2D5016", linewidth = 1.1) +
-      # tip labels placed at -(label_gap), extending further negative
       geom_text(data = tip_df,
                 aes(x = x, label = label),
                 y      = -label_gap,
                 hjust  = 0, vjust = 0.5, size = 5.5,
                 family = "serif", fontface = "italic", colour = "#1C1812") +
-      # MRCA labels above each internal node
       geom_text(data = node_df,
                 aes(x = x, y = y, label = mrca),
-                hjust = 0.5, vjust = -0.65, size = 4,
+                hjust = 0.5, vjust = -0.65, size = 6,
                 family = "serif", fontface = "italic", colour = "#8B6914") +
       geom_point(data = node_df,
                  aes(x = x, y = y),
                  colour = "#8B6914", fill = "#FAF7F0",
                  shape = 21, size = 3.5, stroke = 1.4) +
       coord_flip(clip = "off") +
-      # reversed: root (max_dist) on left, tips (0) toward right, labels further right
       scale_y_reverse(
         limits = c(max_dist * 1.04, -(label_gap + label_width)),
         expand = expansion(0)
