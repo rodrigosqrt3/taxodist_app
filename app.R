@@ -319,7 +319,7 @@ ui <- fluidPage(
 
   # Header
   div(class = "app-header mb-0",
-      h1(HTML('taxodist <span class=\"badge-pkg\">v0.1</span>')),
+      h1(HTML('taxodist <span class=\"badge-pkg\">v0.1.0</span>')),
       div(class = "subtitle",
           "Taxonomic Distance & Phylogenetic Lineage Explorer — powered by The Taxonomicon"
       )
@@ -960,8 +960,8 @@ server <- function(input, output, session) {
     mem <- tryCatch(le_member(), error = function(e) NULL)
     mem_ui <- if (!is.null(mem) && nchar(trimws(input$le_clade_check)) > 0) {
       col <- if (isTRUE(mem)) "#d4e8c2" else "#f5d0c8"
-      txt <- if (isTRUE(mem)) sprintf("✓ %s IS a member of %s", trimws(input$le_taxon), trimws(input$le_clade_check))
-      else sprintf("✗ %s is NOT a member of %s", trimws(input$le_taxon), trimws(input$le_clade_check))
+      txt <- if (isTRUE(mem)) sprintf("%s IS a member of %s", trimws(input$le_taxon), trimws(input$le_clade_check))
+      else sprintf("%s is NOT a member of %s", trimws(input$le_taxon), trimws(input$le_clade_check))
       div(style = sprintf("background:%s; border-radius:3px; padding:0.6rem 1rem; font-size:0.88rem; margin-top:0.8rem; font-style:italic;", col), txt)
     } else NULL
 
@@ -1013,8 +1013,7 @@ server <- function(input, output, session) {
 
     pills <- lapply(names(res), function(nm) {
       cls <- if (isTRUE(res[nm])) "cov-pill cov-found" else "cov-pill cov-notfound"
-      ico <- if (isTRUE(res[nm])) "✓" else "✗"
-      span(class = cls, sprintf("%s %s", ico, nm))
+      span(class = cls, nm)
     })
 
     tagList(
@@ -1087,10 +1086,10 @@ server <- function(input, output, session) {
       card(
         card_header("Results"),
         div(class = "p-3",
-            div(class = "result-label mb-1", sprintf("✓ In %s (%d)", res$clade, length(res$kept))),
+            div(class = "result-label mb-1", sprintf("In %s (%d)", res$clade, length(res$kept))),
             if (length(res$kept) > 0) div(make_tags(res$kept, "taxon-tag")) else div(class="text-muted fst-italic small", "none"),
             hr(class = "section-divider"),
-            div(class = "result-label mb-1", sprintf("✗ Not in %s (%d)", res$clade, length(excluded))),
+            div(class = "result-label mb-1", sprintf("Not in %s (%d)", res$clade, length(excluded))),
             if (length(excluded) > 0) div(make_tags(excluded, "taxon-tag")) else div(class="text-muted fst-italic small", "none")
         )
       )
