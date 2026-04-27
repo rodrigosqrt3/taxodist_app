@@ -2,7 +2,7 @@ library(shiny)
 library(bslib)
 library(taxodist)
 library(ggplot2)
-library(ggdendro)
+library(ggrepel)
 library(DT)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -251,6 +251,11 @@ app_theme <- bs_theme(
       font-family:'JetBrains Mono',monospace;
       margin:0.2rem;
     }
+    .lineage-node.descending {
+      background: #f5e6d0;
+      border-color: var(--amber);
+      color: var(--amber);
+    }
 
     /* ── Misc ── */
     .section-divider {
@@ -319,7 +324,7 @@ ui <- fluidPage(
 
   # Header
   div(class = "app-header mb-0",
-      h1(HTML('taxodist <span class=\"badge-pkg\">v0.1.0</span>')),
+      h1(HTML(paste0('taxodist <span class=\"badge-pkg\">v', packageVersion("taxodist"), '</span>'))),
       div(class = "subtitle",
           "Taxonomic Distance & Phylogenetic Lineage Explorer — powered by The Taxonomicon"
       )
@@ -512,6 +517,31 @@ ui <- fluidPage(
                     )
                   )
               )
+    ),
+    # ── Tab 7: Taxonomic Path ─────────────────────────────────────────────────────
+    nav_panel("Taxonomic Path",
+              div(class = "container-fluid py-4",
+                  fluidRow(
+                    column(4,
+                           card(
+                             card_header("Taxa"),
+                             div(class = "p-3",
+                                 textInput("tp_taxon_a", "Taxon A", placeholder = "e.g. Tyrannosaurus"),
+                                 textInput("tp_taxon_b", "Taxon B", placeholder = "e.g. Triceratops"),
+                                 div(class = "d-flex gap-2 mt-3",
+                                     actionButton("tp_run", "Trace Path",
+                                                  class = "btn btn-primary flex-grow-1", icon = icon("route")),
+                                     actionButton("tp_example", "Shuffle",
+                                                  class = "btn btn-outline-secondary", icon = icon("shuffle"))
+                                 )
+                             )
+                           )
+                    ),
+                    column(8,
+                           uiOutput("tp_result_ui")
+                    )
+                  )
+              )
     )
   )
 )
@@ -524,12 +554,59 @@ server <- function(input, output, session) {
 
   # Pool of diverse taxa for random shuffle
   shuffle_pool <- c(
-    "Tyrannosaurus", "Velociraptor", "Triceratops", "Brachiosaurus",
-    "Spinosaurus", "Allosaurus", "Carnotaurus", "Diplodocus",
-    "Ankylosaurus", "Stegosaurus", "Iguanodon", "Parasaurolophus",
-    "Homo", "Quercus", "Agaricus", "Escherichia",
-    "Drosophila", "Canis", "Panthera", "Pycnonemosaurus",
-    "Nomingia", "Huanansaurus", "Aucasaurus", "Coelophysis"
+    # Dinossauros e répteis fósseis
+    "Tyrannosaurus", "Triceratops", "Carnotaurus", "Velociraptor",
+    "Spinosaurus", "Stegosaurus", "Brachiosaurus", "Diplodocus",
+    "Allosaurus", "Ankylosaurus", "Iguanodon", "Parasaurolophus",
+    "Deinonychus", "Archaeopteryx", "Pteranodon", "Mosasaurus",
+
+    # Aves
+    "Struthio", "Gallus", "Anas", "Columba", "Falco", "Corvus",
+    "Ara", "Spheniscus", "Aptenodytes", "Tyto", "Bubo",
+
+    # Mamíferos
+    "Homo", "Panthera", "Canis", "Felis", "Equus", "Bos",
+    "Sus", "Ovis", "Capra", "Mus", "Rattus", "Loxodonta",
+    "Giraffa", "Delphinus", "Balaenoptera", "Puma",
+    "Myrmecophaga", "Priodontes", "Tapirus", "Mazama",
+    "Chrysocyon", "Leontopithecus", "Brachyteles", "Pteronura",
+    "Ornithorhynchus", "Macropus", "Phascolarctos",
+
+    # Répteis e anfíbios
+    "Crocodylus", "Alligator", "Chelonia", "Varanus",
+    "Python", "Boa", "Iguana", "Rana", "Bufo", "Ambystoma",
+
+    # Peixes e marinhos
+    "Octopus", "Loligo", "Carcharodon", "Sphyrna", "Salmo",
+    "Oncorhynchus", "Thunnus", "Hippocampus", "Danio",
+    "Paramecium", "Aurelia", "Hydra",
+
+    # Insetos e artrópodes
+    "Drosophila", "Apis", "Bombus", "Atta", "Camponotus",
+    "Anopheles", "Aedes", "Culex", "Danaus", "Manduca",
+    "Latrodectus", "Loxosceles", "Scorpio",
+
+    # Invertebrados modelo
+    "Caenorhabditis", "Strongylocentrotus", "Nereis", "Lumbricus",
+
+    # Plantas
+    "Quercus", "Pinus", "Ginkgo", "Araucaria", "Eucalyptus",
+    "Ficus", "Zea", "Oryza", "Triticum", "Solanum",
+    "Arabidopsis", "Nicotiana", "Helianthus", "Coffea",
+    "Theobroma", "Musa", "Mangifera", "Passiflora",
+
+    # Fungos
+    "Saccharomyces", "Amanita", "Aspergillus", "Penicillium",
+    "Candida", "Neurospora", "Pleurotus",
+
+    # Bactérias e arqueias
+    "Escherichia", "Bacillus", "Staphylococcus", "Streptococcus",
+    "Pseudomonas", "Salmonella", "Lactobacillus", "Clostridium",
+    "Methanococcus", "Halobacterium", "Sulfolobus",
+
+    # Protistas e parasitas
+    "Plasmodium", "Trypanosoma", "Leishmania", "Giardia",
+    "Euglena", "Tetrahymena", "Amoeba"
   )
 
   observeEvent(input$pd_example, {
@@ -665,16 +742,26 @@ server <- function(input, output, session) {
     if (is.null(dm)) return(div(class="p-3 text-muted fst-italic", "Results will appear here."))
     n  <- length(attr(dm, "Labels"))
     ht <- max(350, n * 58)
+
     tagList(
       card(
         card_header("Distance Matrix"),
         div(class = "p-2", DTOutput("dm_table"))
       ),
-      card(class = "mt-3",
-           card_header("Dendrogram"),
-           div(class = "p-2",
-               plotOutput("dm_dendro", height = paste0(ht, "px"))
-           )
+      fluidRow(
+        class = "mt-3",
+        column(6,
+               card(
+                 card_header("Dendrogram"),
+                 div(class = "p-2", plotOutput("dm_dendro", height = paste0(ht, "px")))
+               )
+        ),
+        column(6,
+               card(
+                 card_header("Ordination (PCoA)"),
+                 div(class = "p-2", plotOutput("dm_pcoa", height = paste0(ht, "px")))
+               )
+        )
       )
     )
   })
@@ -779,7 +866,7 @@ server <- function(input, output, session) {
       coord_flip(clip = "off") +
       scale_y_reverse(
         limits = c(max_dist * 1.04, -(label_gap + label_width)),
-        expand = expansion(0)
+        expand = expansion(mult = c(0.05, 0.7))
       ) +
       scale_x_continuous(expand = expansion(mult = 0.05)) +
       labs(x = NULL, y = NULL) +
@@ -809,6 +896,40 @@ server <- function(input, output, session) {
                   )
       )
   })
+
+  output$dm_pcoa <- renderPlot({
+    dm <- dm_result()
+    req(dm)
+
+    ord <- taxo_ordinate(dm, k = 2)
+    df <- as.data.frame(ord$points)
+    colnames(df) <- c("PC1", "PC2")
+    df$Taxon <- rownames(df)
+
+    gof_pct <- round(ord$GOF[1] * 100, 1)
+
+    ggplot(df, aes(x = PC1, y = PC2, label = Taxon)) +
+      # Eixos centrais mais sutis
+      geom_hline(yintercept = 0, linetype = "dashed", color = "#C8B99A", linewidth = 0.5) +
+      geom_vline(xintercept = 0, linetype = "dashed", color = "#C8B99A", linewidth = 0.5) +
+      # Pontos elegantes
+      geom_point(color = "#8B6914", fill = "#FAF7F0", shape = 21, size = 3.5, stroke = 1.4) +
+      # Repulsão automática de texto para NUNCA sobrepor
+      geom_text_repel(
+        family = "serif", fontface = "italic", color = "#1C1812", size = 5,
+        box.padding = 0.5, point.padding = 0.3, segment.color = "#C8B99A", segment.alpha = 0.6
+      ) +
+      labs(x = "Coordinate 1", y = "Coordinate 2",
+           subtitle = paste0("Goodness-of-fit: ", gof_pct, "%")) +
+      theme_minimal(base_family = "serif") +
+      theme(
+        panel.grid.major = element_line(color = "#EAE3D5"),
+        panel.grid.minor = element_blank(),
+        plot.background = element_rect(fill = "#FAF7F0", colour = NA),
+        plot.margin = margin(10, 20, 10, 10),
+        plot.subtitle = element_text(color = "#7A6B55", face = "italic")
+      )
+  }, bg = "#FAF7F0")
 
   # ── Closest Relative ────────────────────────────────────────────────────────
 
@@ -1091,6 +1212,75 @@ server <- function(input, output, session) {
             hr(class = "section-divider"),
             div(class = "result-label mb-1", sprintf("Not in %s (%d)", res$clade, length(excluded))),
             if (length(excluded) > 0) div(make_tags(excluded, "taxon-tag")) else div(class="text-muted fst-italic small", "none")
+        )
+      )
+    )
+  })
+
+  # ── Taxonomic Path ───────────────────────────────────────────────────────────
+
+  observeEvent(input$tp_example, {
+    pair <- sample(shuffle_pool, 2)
+    updateTextInput(session, "tp_taxon_a", value = pair[1])
+    updateTextInput(session, "tp_taxon_b", value = pair[2])
+  })
+
+  tp_result <- eventReactive(input$tp_run, {
+    req(nchar(trimws(input$tp_taxon_a)) > 0, nchar(trimws(input$tp_taxon_b)) > 0)
+    session$sendCustomMessage("show_loading", list())
+    on.exit(session$sendCustomMessage("hide_loading", list()))
+    withCallingHandlers(
+      taxo_path(trimws(input$tp_taxon_a), trimws(input$tp_taxon_b), verbose = FALSE),
+      error = function(e) { showNotification(conditionMessage(e), type = "error"); NULL }
+    )
+  })
+
+  output$tp_result_ui <- renderUI({
+    df <- tp_result()
+    if (is.null(df)) return(div(class="p-3 text-muted fst-italic", "Results will appear here."))
+
+    ta <- trimws(input$tp_taxon_a)
+    tb <- trimws(input$tp_taxon_b)
+
+    nodes <- lapply(seq_len(nrow(df)), function(i) {
+      row <- df[i, ]
+      cls <- if (row$role == "mrca") "lineage-node mrca"
+      else if (row$role == "ascending") "lineage-node shared"
+      else "lineage-node"
+      tagList(
+        if (i > 1) span(class = "lineage-arrow", "›") else NULL,
+        div(style = "display:inline-block; text-align:center; margin:0.2rem 0.1rem;",
+            span(class = cls, row$taxon),
+            div(style = "font-size:0.68rem; color:#7A6B55; font-style:normal; letter-spacing:0.04em;",
+                toupper(row$rank))
+        )
+      )
+    })
+
+    mrca_row <- df[df$role == "mrca", ]
+
+    tagList(
+      div(class = "result-box mb-3",
+          fluidRow(
+            column(6,
+                   div(class = "result-label", "Path length"),
+                   div(class = "result-distance", nrow(df) - 1L)
+            ),
+            column(6,
+                   div(class = "result-label", "MRCA"),
+                   div(class = "result-mrca", if (nrow(mrca_row) > 0) mrca_row$taxon[1] else "—")
+            )
+          )
+      ),
+      div(class = "mb-2",
+          span(class = "lineage-node shared", "■"), " Ascending (", tags$i(ta), ")  ",
+          span(class = "lineage-node mrca",   "■"), " MRCA  ",
+          span(class = "lineage-node",        "■"), " Descending (", tags$i(tb), ")"
+      ),
+      card(
+        card_header("Node-by-node path"),
+        div(class = "p-3",
+            div(style = "line-height:3;", nodes)
         )
       )
     )
