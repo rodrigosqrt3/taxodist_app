@@ -517,31 +517,6 @@ ui <- fluidPage(
                     )
                   )
               )
-    ),
-    # ── Tab 7: Taxonomic Path ─────────────────────────────────────────────────────
-    nav_panel("Taxonomic Path",
-              div(class = "container-fluid py-4",
-                  fluidRow(
-                    column(4,
-                           card(
-                             card_header("Taxa"),
-                             div(class = "p-3",
-                                 textInput("tp_taxon_a", "Taxon A", placeholder = "e.g. Tyrannosaurus"),
-                                 textInput("tp_taxon_b", "Taxon B", placeholder = "e.g. Triceratops"),
-                                 div(class = "d-flex gap-2 mt-3",
-                                     actionButton("tp_run", "Trace Path",
-                                                  class = "btn btn-primary flex-grow-1", icon = icon("route")),
-                                     actionButton("tp_example", "Shuffle",
-                                                  class = "btn btn-outline-secondary", icon = icon("shuffle"))
-                                 )
-                             )
-                           )
-                    ),
-                    column(8,
-                           uiOutput("tp_result_ui")
-                    )
-                  )
-              )
     )
   )
 )
@@ -1212,75 +1187,6 @@ server <- function(input, output, session) {
             hr(class = "section-divider"),
             div(class = "result-label mb-1", sprintf("Not in %s (%d)", res$clade, length(excluded))),
             if (length(excluded) > 0) div(make_tags(excluded, "taxon-tag")) else div(class="text-muted fst-italic small", "none")
-        )
-      )
-    )
-  })
-
-  # ── Taxonomic Path ───────────────────────────────────────────────────────────
-
-  observeEvent(input$tp_example, {
-    pair <- sample(shuffle_pool, 2)
-    updateTextInput(session, "tp_taxon_a", value = pair[1])
-    updateTextInput(session, "tp_taxon_b", value = pair[2])
-  })
-
-  tp_result <- eventReactive(input$tp_run, {
-    req(nchar(trimws(input$tp_taxon_a)) > 0, nchar(trimws(input$tp_taxon_b)) > 0)
-    session$sendCustomMessage("show_loading", list())
-    on.exit(session$sendCustomMessage("hide_loading", list()))
-    withCallingHandlers(
-      taxo_path(trimws(input$tp_taxon_a), trimws(input$tp_taxon_b), verbose = FALSE),
-      error = function(e) { showNotification(conditionMessage(e), type = "error"); NULL }
-    )
-  })
-
-  output$tp_result_ui <- renderUI({
-    df <- tp_result()
-    if (is.null(df)) return(div(class="p-3 text-muted fst-italic", "Results will appear here."))
-
-    ta <- trimws(input$tp_taxon_a)
-    tb <- trimws(input$tp_taxon_b)
-
-    nodes <- lapply(seq_len(nrow(df)), function(i) {
-      row <- df[i, ]
-      cls <- if (row$role == "mrca") "lineage-node mrca"
-      else if (row$role == "ascending") "lineage-node shared"
-      else "lineage-node"
-      tagList(
-        if (i > 1) span(class = "lineage-arrow", "›") else NULL,
-        div(style = "display:inline-block; text-align:center; margin:0.2rem 0.1rem;",
-            span(class = cls, row$taxon),
-            div(style = "font-size:0.68rem; color:#7A6B55; font-style:normal; letter-spacing:0.04em;",
-                toupper(row$rank))
-        )
-      )
-    })
-
-    mrca_row <- df[df$role == "mrca", ]
-
-    tagList(
-      div(class = "result-box mb-3",
-          fluidRow(
-            column(6,
-                   div(class = "result-label", "Path length"),
-                   div(class = "result-distance", nrow(df) - 1L)
-            ),
-            column(6,
-                   div(class = "result-label", "MRCA"),
-                   div(class = "result-mrca", if (nrow(mrca_row) > 0) mrca_row$taxon[1] else "—")
-            )
-          )
-      ),
-      div(class = "mb-2",
-          span(class = "lineage-node shared", "■"), " Ascending (", tags$i(ta), ")  ",
-          span(class = "lineage-node mrca",   "■"), " MRCA  ",
-          span(class = "lineage-node",        "■"), " Descending (", tags$i(tb), ")"
-      ),
-      card(
-        card_header("Node-by-node path"),
-        div(class = "p-3",
-            div(style = "line-height:3;", nodes)
         )
       )
     )
