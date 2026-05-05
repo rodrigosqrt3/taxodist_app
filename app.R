@@ -459,6 +459,33 @@ ui <- fluidPage(
               )
     ),
 
+    # ── Tab Nova: Search Database ─────────────────────────────────────────────
+    nav_panel("Search Database",
+              div(class = "container-fluid py-4",
+                  fluidRow(
+                    column(4,
+                           card(
+                             card_header("Search Taxonomicon"),
+                             div(class = "p-3",
+                                 textInput("sd_taxon", "Taxon name", placeholder = "e.g. Bacteria"),
+                                 actionButton("sd_run", "Search",
+                                              class = "btn btn-primary w-100 mt-2", icon = icon("search")),
+                                 hr(class = "section-divider"),
+                                 div(class = "text-muted fst-italic small",
+                                     "Use this tool to find exact numeric IDs for ambiguous taxa (homonyms or historical ranks).",
+                                     tags$br(), tags$br(),
+                                     tags$b("Tip:"), " You can type or paste these numeric IDs directly into ANY other tab in this app instead of the taxon name!"
+                                 )
+                             )
+                           )
+                    ),
+                    column(8,
+                           uiOutput("sd_result_ui")
+                    )
+                  )
+              )
+    ),
+
     # ── Tab 5: Coverage Check ─────────────────────────────────────────────────
     nav_panel("Coverage Check",
               div(class = "container-fluid py-4",
@@ -1067,6 +1094,42 @@ server <- function(input, output, session) {
         div(class = "p-3",
             div(style = "line-height:2.4;", nodes),
             mem_ui
+        )
+      )
+    )
+  })
+
+  # ── Search Database (Server) ────────────────────────────────────────────────
+
+  sd_result <- eventReactive(input$sd_run, {
+    req(nchar(trimws(input$sd_taxon)) > 0)
+    session$sendCustomMessage("show_loading", list())
+    on.exit(session$sendCustomMessage("hide_loading", list()))
+
+    withCallingHandlers(
+      taxo_search(trimws(input$sd_taxon), verbose = FALSE),
+      error = function(e) { showNotification(conditionMessage(e), type = "error"); NULL }
+    )
+  })
+
+  output$sd_result_ui <- renderUI({
+    res <- sd_result()
+    if (is.null(res)) return(div(class="p-3 text-muted fst-italic", "No matches found."))
+
+    tagList(
+      card(
+        card_header(sprintf("Search results for '%s'", trimws(input$sd_taxon))),
+        div(class = "p-2",
+            renderDT({
+              datatable(
+                res,
+                options = list(pageLength = 10, dom = "t", scrollX = TRUE),
+                rownames = FALSE,
+                selection = "none",
+                colnames = c("Numeric ID", "Accepted Name / Rank")
+              ) |>
+                formatStyle('id', fontWeight = 'bold', color = '#2D5016')
+            })
         )
       )
     )
