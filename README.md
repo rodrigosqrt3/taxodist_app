@@ -6,7 +6,7 @@
 [![License: GPL-3](https://img.shields.io/badge/license-GPL--3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
 [![R](https://img.shields.io/badge/built%20with-R-276DC3?logo=r&logoColor=white)](https://www.r-project.org/)
 
-A Shiny web application for computing **taxonomic distances and exploring phylogenetic lineages**, powered by the [taxodist](https://cran.r-project.org/web/packages/taxodist/index.html) R package and [The Taxonomicon](https://taxonomicon.taxonomy.nl/) database.
+A Shiny web application for computing taxonomic distances and exploring phylogenetic lineages, powered by the [taxodist](https://cran.r-project.org/web/packages/taxodist/index.html) R package and [The Taxonomicon](https://taxonomicon.taxonomy.nl/) database.
 
 ---
 
@@ -91,5 +91,5 @@ citation("taxodist")
 
 ## Author
 
-Developed by **Rodrigo Fonseca Villa**.
+Developed by Rodrigo Fonseca Villa.
 Feedback and contributions are welcome. Feel free to [open an issue](https://github.com/rodrigosqrt3/taxodist_app/issues) or a pull request.
