@@ -38,7 +38,7 @@ app_theme <- bs_theme(
   code_font     = font_google("DM Mono")
 ) |>
   bs_add_rules("
-    :root {
+    :root, [data-bs-theme='light'] {
       --bg:      #faf6ee;
       --border:  #5c3d1e;
       --branch:  #8b5e3c;
@@ -48,6 +48,29 @@ app_theme <- bs_theme(
       --rule:    #d9c9b0;
       --card-bg: #f3ede0;
       --code-bg: #ede5d0;
+      --bs-body-bg:       var(--bg);
+      --bs-body-color:    var(--ink);
+      --bs-card-bg:       var(--card-bg);
+      --bs-border-color:  var(--rule);
+      --bs-primary:       var(--border);
+    }
+
+    [data-bs-theme='dark'] {
+      --bg:      #1a1a1a;
+      --border:  #e5c19d;
+      --branch:  #c2946d;
+      --tip:     #ede5d0;
+      --ink:     #f4f1ea;
+      --muted:   #b0a290;
+      --rule:    #3d362e;
+      --card-bg: #26211c;
+      --code-bg: #2d2620;
+
+      --bs-body-bg:       var(--bg);
+      --bs-body-color:    var(--ink);
+      --bs-card-bg:       var(--card-bg);
+      --bs-border-color:  var(--rule);
+      --bs-primary:       var(--border);
     }
 
     body {
@@ -364,7 +387,8 @@ ui <- fluidPage(
 
   # Header
   div(class = "app-header mb-0",
-      div(style = "position: absolute; right: 25px; top: 25px; z-index: 1000;",
+      div(style = "position: absolute; right: 25px; top: 25px; z-index: 1000; display: flex; gap: 15px; align-items: center;",
+          input_dark_mode(id = "dark_mode_toggle"),
           selectInput("selected_language", NULL,
                       choices = c(
                         "English"   = "en",
