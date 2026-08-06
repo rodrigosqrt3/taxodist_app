@@ -6,7 +6,7 @@
 [![License: GPL-3](https://img.shields.io/badge/license-GPL--3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
 [![R](https://img.shields.io/badge/built%20with-R-276DC3?logo=r&logoColor=white)](https://www.r-project.org/)
 
-A multilingual Shiny web application for computing taxonomic distances and exploring phylogenetic lineages, powered by the [taxodist](https://cran.r-project.org/web/packages/taxodist/index.html) R package and [The Taxonomicon](https://taxonomicon.taxonomy.nl/) database. 
+A multilingual Shiny web application for computing taxonomic distances and exploring taxonomic hierarchies, powered by the [taxodist](https://cran.r-project.org/web/packages/taxodist/index.html) R package and [The Taxonomicon](https://taxonomicon.taxonomy.nl/) database. 
 
 Available in English, Portuguese, Spanish, French, and German.
 
@@ -20,16 +20,23 @@ Available in English, Portuguese, Spanish, French, and German.
 
 ## Features
 
-The app exposes the main functions of the `taxodist` package through an interactive interface with six tabs:
+The app exposes the main functions of the `taxodist` package through an interactive interface with seven tabs:
 
 | Tab | Description |
 |-----|-------------|
 | **Pairwise Distance** | Compute the taxonomic distance between any two taxa, with full lineage comparison and MRCA highlighted |
-| **Distance Matrix** | Build a pairwise distance matrix for a list of taxa, with an interactive table and a publication-ready dendrogram |
+| **Distance Matrix** | Build a pairwise distance matrix from pasted names or a CSV file, inspect the table, and explore average-linkage clustering and PCoA |
 | **Closest Relative** | Given a query taxon and a set of candidates, rank them by taxonomic proximity |
 | **Lineage Explorer** | Retrieve the full lineage of any taxon and check clade membership |
+| **Search Database** | Search The Taxonomicon for candidate records and numeric identifiers |
 | **Coverage Check** | Verify which taxa in a list are present in The Taxonomicon database |
 | **Filter by Clade** | Filter a list of taxa, retaining only those belonging to a given clade |
+
+The matrix and coverage tabs accept comma- or semicolon-separated CSV files.
+Recognized column names include `taxon`, `taxa`, `species`, `name`, and
+`scientific_name`; in a headerless file, the first column is used. The app also
+offers a downloadable template; [`example_taxa.csv`](example_taxa.csv) can be
+used as a quick upload test.
 
 ---
 
@@ -62,9 +69,20 @@ CRAN page: [https://cran.r-project.org/web/packages/taxodist/index.html](https:/
 
 The distance between two taxa A and B is defined as:
 
-$$d(A, B) = \frac{1}{\text{depth}(\text{MRCA}(A, B))}$$
+$$
+d(A,B) =
+\begin{cases}
+0, & A = B, \\
+\dfrac{1}{\text{depth}(\text{MRCA}(A,B))}, & A \ne B.
+\end{cases}
+$$
 
-where MRCA is the Most Recent Common Ancestor of A and B in The Taxonomicon hierarchy, and depth is its position from the root. Taxa that share a more recent (deeper) ancestor receive a smaller distance value.
+where MRCA is the Most Recent Common Ancestor of A and B in The Taxonomicon hierarchy, and depth is its position from the root. Taxa that share a more recent (deeper) ancestor receive a smaller distance value. Zero is reserved for identical hierarchy nodes; distinct ancestor-descendant pairs therefore have positive distance.
+
+These values describe depth in a taxonomic classification. They are not
+evolutionary time, genetic distance, or phylogenetic branch lengths. Likewise,
+the dendrogram and PCoA are representations of the supplied hierarchy-distance
+matrix, not independently inferred phylogenies.
 
 ---
 
@@ -78,7 +96,6 @@ where MRCA is the Most Recent Common Ancestor of A and B in The Taxonomicon hier
 | [`bslib`](https://rstudio.github.io/bslib/) | Bootstrap 5 theming |
 | [`ggplot2`](https://ggplot2.tidyverse.org/) | Dendrogram & Ordination plotting |
 | [`ggrepel`](https://cran.r-project.org/package=ggrepel) | Text label repulsion for PCoA plots |
-| [`ggdendro`](https://cran.r-project.org/package=ggdendro) | Dendrogram data extraction |
 | [`DT`](https://rstudio.github.io/DT/) | Interactive distance matrix table |
 
 ---

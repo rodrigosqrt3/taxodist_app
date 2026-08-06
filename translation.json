@@ -2,14 +2,14 @@
   "languages":["en", "pt", "es", "fr", "de"],
   "translation":[
     {
-      "en": "Taxonomic Distance & Phylogenetic Lineage Explorer — powered by The Taxonomicon", 
-      "pt": "Explorador de Distância Taxonômica e Linhagem Filogenética — provido por The Taxonomicon",
-      "es": "Explorador de Distancia Taxonómica y Linaje Filogenético — impulsado por The Taxonomicon",
-      "fr": "Explorateur de Distance Taxonomique et de Lignée Phylogénétique — propulsé par The Taxonomicon",
-      "de": "Taxonomische Distanz & Phylogenetischer Abstammungs-Explorer — unterstützt von The Taxonomicon"
+      "en": "Taxonomic Distance & Hierarchy Explorer — powered by The Taxonomicon",
+      "pt": "Explorador de Distância Taxonômica e Hierarquias — provido por The Taxonomicon",
+      "es": "Explorador de Distancia Taxonómica y Jerarquías — impulsado por The Taxonomicon",
+      "fr": "Explorateur de Distance Taxonomique et de Hiérarchies — propulsé par The Taxonomicon",
+      "de": "Taxonomische Distanz & Hierarchie-Explorer — unterstützt von The Taxonomicon"
     },
     {
-      "en": "Querying The Taxonomicon…", 
+      "en": "Querying The Taxonomicon…",
       "pt": "Consultando o Taxonomicon…",
       "es": "Consultando The Taxonomicon…",
       "fr": "Interrogation de The Taxonomicon…",
@@ -46,13 +46,13 @@
       "en": "Results will appear here.", "pt": "Os resultados aparecerão aqui.", "es": "Los resultados aparecerán aquí.", "fr": "Les résultats apparaîtront ici.", "de": "Ergebnisse werden hier angezeigt."
     },
     {
-      "en": "0 (ancestor)", "pt": "0 (ancestral)", "es": "0 (ancestro)", "fr": "0 (ancêtre)", "de": "0 (Vorfahr)"
+      "en": "0 (identical)", "pt": "0 (idêntico)", "es": "0 (idéntico)", "fr": "0 (identique)", "de": "0 (identisch)"
     },
     {
       "en": "No common ancestor found.", "pt": "Nenhum ancestral comum encontrado.", "es": "No se encontró un ancestro común.", "fr": "Aucun ancêtre commun trouvé.", "de": "Kein gemeinsamer Vorfahre gefunden."
     },
     {
-      "en": "One taxon is an ancestor of the other.", "pt": "Um táxon é ancestral do outro.", "es": "Un taxón es ancestro del otro.", "fr": "Un taxon est un ancêtre de l'autre.", "de": "Ein Taxon ist ein Vorfahre des anderen."
+      "en": "The two inputs resolve to the same hierarchy node.", "pt": "As duas entradas correspondem ao mesmo nó da hierarquia.", "es": "Las dos entradas corresponden al mismo nodo de la jerarquía.", "fr": "Les deux entrées correspondent au même nœud de la hiérarchie.", "de": "Beide Eingaben entsprechen demselben Hierarchieknoten."
     },
     {
       "en": "Distance", "pt": "Distância", "es": "Distancia", "fr": "Distance", "de": "Distanz"
@@ -61,14 +61,14 @@
       "en": "Most Recent Common Ancestor", "pt": "Ancestral Comum Mais Recente", "es": "Ancestro Común Más Reciente", "fr": "Ancêtre Commun le Plus Récent", "de": "Jüngster Gemeinsamer Vorfahre"
     },
     {
-      "en": "MRCA depth: %d | Depth %s: %d | Depth %s: %d", 
+      "en": "MRCA depth: %d | Depth %s: %d | Depth %s: %d",
       "pt": "Prof. ACMR: %d | Prof. %s: %d | Prof. %s: %d",
       "es": "Prof. ACMR: %d | Prof. %s: %d | Prof. %s: %d",
       "fr": "Prof. ACPR: %d | Prof. %s: %d | Prof. %s: %d",
       "de": "JGV-Tiefe: %d | Tiefe %s: %d | Tiefe %s: %d"
     },
     {
-      "en": "MRCA at depth %d; distance = 1 / %d.", 
+      "en": "MRCA at depth %d; distance = 1 / %d.",
       "pt": "ACMR na profundidade %d; distância = 1 / %d.",
       "es": "ACMR en profundidad %d; distancia = 1 / %d.",
       "fr": "ACPR à la profondeur %d ; distance = 1 / %d.",
@@ -93,7 +93,7 @@
       "en": "Taxa List", "pt": "Lista de Táxons", "es": "Lista de Taxones", "fr": "Liste de Taxons", "de": "Taxa-Liste"
     },
     {
-      "en": "Enter taxa (one per line or comma-separated)", 
+      "en": "Enter taxa (one per line or comma-separated)",
       "pt": "Insira os táxons (um por linha ou separados por vírgula)",
       "es": "Ingrese taxones (uno por línea o separados por comas)",
       "fr": "Entrez les taxons (un par ligne ou séparés par des virgules)",
@@ -103,7 +103,7 @@
       "en": "Build Matrix", "pt": "Criar Matriz", "es": "Crear Matriz", "fr": "Construire la Matrice", "de": "Matrix Erstellen"
     },
     {
-      "en": "Or upload CSV (one taxon per row)", 
+      "en": "Or upload CSV (one taxon per row)",
       "pt": "Ou envie um CSV (um táxon por linha)",
       "es": "O suba un CSV (un taxón por fila)",
       "fr": "Ou téléchargez un CSV (un taxon par ligne)",
@@ -134,7 +134,7 @@
       "en": "Query Taxon", "pt": "Táxon de Consulta", "es": "Taxón de Consulta", "fr": "Taxon de Requête", "de": "Abfrage-Taxon"
     },
     {
-      "en": "Candidate Taxa (one per line or comma-separated)", 
+      "en": "Candidate Taxa (one per line or comma-separated)",
       "pt": "Táxons Candidatos (um por linha ou separados por vírgula)",
       "es": "Taxones Candidatos (uno por línea o separados por comas)",
       "fr": "Taxons Candidats (un par ligne ou séparés par des virgules)",
@@ -162,7 +162,7 @@
       "en": "⚠ Data quality notice: ", "pt": "⚠ Aviso de qualidade de dados: ", "es": "⚠ Aviso de calidad de datos: ", "fr": "⚠ Avis de qualité des données : ", "de": "⚠ Hinweis zur Datenqualität: "
     },
     {
-      "en": "One or more taxa have a shallow lineage depth (< 25 nodes) in The Taxonomicon, meaning they are poorly resolved in the database. Their distances may be artificially large and rankings unreliable. Check the Lineage Explorer tab for details.", 
+      "en": "One or more taxa have a shallow lineage depth (< 25 nodes) in The Taxonomicon, meaning they are poorly resolved in the database. Their distances may be artificially large and rankings unreliable. Check the Lineage Explorer tab for details.",
       "pt": "Um ou mais táxons têm uma profundidade de linhagem rasa (< 25 nós) no Taxonomicon, significando que são mal resolvidos no banco de dados. Suas distâncias podem ser artificialmente grandes e os ranqueamentos não confiáveis. Verifique a aba Explorador de Linhagem para detalhes.",
       "es": "Uno o más taxones tienen una profundidad de linaje baja (< 25 nodos) en The Taxonomicon, lo que significa que están mal resueltos en la base de datos. Sus distancias pueden ser artificialmente grandes y sus clasificaciones poco confiables. Verifique la pestaña Explorador de Linajes para más detalles.",
       "fr": "Un ou plusieurs taxons ont une faible profondeur de lignée (< 25 nœuds) dans The Taxonomicon, ce qui signifie qu'ils sont mal résolus dans la base de données. Leurs distances peuvent être artificiellement grandes et les classements peu fiables. Consultez l'onglet Explorateur de Lignées pour plus de détails.",
@@ -220,7 +220,7 @@
       "en": "Search", "pt": "Buscar", "es": "Buscar", "fr": "Chercher", "de": "Suchen"
     },
     {
-      "en": "Use this tool to find exact numeric IDs for ambiguous taxa (homonyms or historical ranks).", 
+      "en": "Use this tool to find exact numeric IDs for ambiguous taxa (homonyms or historical ranks).",
       "pt": "Use esta ferramenta para encontrar IDs numéricos exatos para táxons ambíguos (homônimos ou classificações históricas).",
       "es": "Use esta herramienta para encontrar identificadores numéricos exactos para taxones ambiguos (homónimos o clasificaciones históricas).",
       "fr": "Utilisez cet outil pour trouver des identifiants numériques exacts pour des taxons ambigus (homonymes ou rangs historiques).",
@@ -230,7 +230,7 @@
       "en": "Tip:", "pt": "Dica:", "es": "Consejo:", "fr": "Astuce :", "de": "Tipp:"
     },
     {
-      "en": " You can type or paste these numeric IDs directly into ANY other tab in this app instead of the taxon name!", 
+      "en": " You can type or paste these numeric IDs directly into ANY other tab in this app instead of the taxon name!",
       "pt": " Você pode digitar ou colar esses IDs numéricos diretamente em QUALQUER outra aba deste app em vez do nome do táxon!",
       "es": " ¡Puede escribir o pegar estos identificadores numéricos directamente en CUALQUIER otra pestaña de esta aplicación en lugar del nombre del taxón!",
       "fr": " Vous pouvez taper ou coller ces identifiants numériques directement dans N'IMPORTE QUEL autre onglet de cette application au lieu du nom du taxon !",
@@ -273,7 +273,7 @@
       "en": "Filter Settings", "pt": "Configurações de Filtro", "es": "Configuraciones de Filtro", "fr": "Paramètres de Filtre", "de": "Filtereinstellungen"
     },
     {
-      "en": "Taxa list (one per line or comma-separated)", 
+      "en": "Taxa list (one per line or comma-separated)",
       "pt": "Lista de táxons (um por linha ou separados por vírgula)",
       "es": "Lista de taxones (uno por línea o separados por comas)",
       "fr": "Liste de taxons (un par ligne ou séparés par des virgules)",
@@ -314,6 +314,57 @@
     },
     {
       "en": "No file selected", "pt": "Nenhum arquivo selecionado", "es": "Ningún archivo seleccionado", "fr": "Aucun fichier sélectionné", "de": "Keine Datei ausgewählt"
+    },
+    {
+      "en": "Download CSV template", "pt": "Baixar modelo CSV", "es": "Descargar plantilla CSV", "fr": "Télécharger le modèle CSV", "de": "CSV-Vorlage herunterladen"
+    },
+    {
+      "en": "Distances represent depth in a taxonomic classification, not evolutionary time or phylogenetic branch length.",
+      "pt": "As distâncias representam a profundidade em uma classificação taxonômica, não o tempo evolutivo nem o comprimento de ramos filogenéticos.",
+      "es": "Las distancias representan la profundidad en una clasificación taxonómica, no el tiempo evolutivo ni la longitud de ramas filogenéticas.",
+      "fr": "Les distances représentent la profondeur dans une classification taxonomique, et non le temps évolutif ni la longueur des branches phylogénétiques.",
+      "de": "Die Distanzen repräsentieren die Tiefe in einer taxonomischen Klassifikation, nicht die Evolutionszeit oder phylogenetische Astlängen."
+    },
+    {
+      "en": "Loaded %d unique taxa from CSV.", "pt": "%d táxons únicos carregados do CSV.", "es": "Se cargaron %d taxones únicos desde el CSV.", "fr": "%d taxons uniques chargés depuis le fichier CSV.", "de": "%d eindeutige Taxa aus der CSV-Datei geladen."
+    },
+    {
+      "en": "Distance matrices are limited to %d taxa in the web app.", "pt": "As matrizes de distância estão limitadas a %d táxons no aplicativo web.", "es": "Las matrices de distancia están limitadas a %d taxones en la aplicación web.", "fr": "Les matrices de distance sont limitées à %d taxons dans l’application web.", "de": "Distanzmatrizen sind in der Webanwendung auf %d Taxa begrenzt."
+    },
+    {
+      "en": "Some distances are missing or infinite. The table is available, but clustering and ordination require a complete finite matrix.",
+      "pt": "Algumas distâncias estão ausentes ou são infinitas. A tabela está disponível, mas o agrupamento e a ordenação exigem uma matriz completa e finita.",
+      "es": "Algunas distancias faltan o son infinitas. La tabla está disponible, pero el agrupamiento y la ordenación requieren una matriz completa y finita.",
+      "fr": "Certaines distances sont manquantes ou infinies. Le tableau reste disponible, mais la classification et l’ordination exigent une matrice complète et finie.",
+      "de": "Einige Distanzen fehlen oder sind unendlich. Die Tabelle ist verfügbar, aber Clusteranalyse und Ordination erfordern eine vollständige endliche Matrix."
+    },
+    {
+      "en": "Clustering requires a complete matrix with finite distances.", "pt": "O agrupamento exige uma matriz completa com distâncias finitas.", "es": "El agrupamiento requiere una matriz completa con distancias finitas.", "fr": "La classification exige une matrice complète avec des distances finies.", "de": "Die Clusteranalyse erfordert eine vollständige Matrix mit endlichen Distanzen."
+    },
+    {
+      "en": "Taxonomic hierarchy distance", "pt": "Distância na hierarquia taxonômica", "es": "Distancia en la jerarquía taxonómica", "fr": "Distance dans la hiérarchie taxonomique", "de": "Distanz in der taxonomischen Hierarchie"
+    },
+    {
+      "en": "Ordination requires a complete matrix with finite distances.", "pt": "A ordenação exige uma matriz completa com distâncias finitas.", "es": "La ordenación requiere una matriz completa con distancias finitas.", "fr": "L’ordination exige une matrice complète avec des distances finies.", "de": "Die Ordination erfordert eine vollständige Matrix mit endlichen Distanzen."
+    },
+    {
+      "en": "Ordination could not be computed.", "pt": "Não foi possível calcular a ordenação.", "es": "No se pudo calcular la ordenación.", "fr": "L’ordination n’a pas pu être calculée.", "de": "Die Ordination konnte nicht berechnet werden."
+    },
+    {
+      "en": "Limited two-dimensional representation.", "pt": "Representação bidimensional limitada.", "es": "Representación bidimensional limitada.", "fr": "Représentation bidimensionnelle limitée.", "de": "Begrenzte zweidimensionale Darstellung."
+    },
+    {
+      "en": "Left is closer; right is more distant.", "pt": "À esquerda: mais próximo; à direita: mais distante.", "es": "A la izquierda: más próximo; a la derecha: más distante.", "fr": "À gauche : plus proche ; à droite : plus distant.", "de": "Links näher; rechts weiter entfernt."
+    },
+    {
+      "en": "One or more taxa have relatively few hierarchy nodes in The Taxonomicon. Their distances may therefore be coarser and should be interpreted with attention to source resolution.",
+      "pt": "Um ou mais táxons possuem relativamente poucos nós hierárquicos no Taxonomicon. Suas distâncias podem, portanto, ser mais grosseiras e devem ser interpretadas considerando a resolução da fonte.",
+      "es": "Uno o más taxones tienen relativamente pocos nodos jerárquicos en The Taxonomicon. Por ello, sus distancias pueden ser más gruesas y deben interpretarse considerando la resolución de la fuente.",
+      "fr": "Un ou plusieurs taxons possèdent relativement peu de nœuds hiérarchiques dans The Taxonomicon. Leurs distances peuvent donc être plus grossières et doivent être interprétées en tenant compte de la résolution de la source.",
+      "de": "Ein oder mehrere Taxa besitzen in The Taxonomicon vergleichsweise wenige Hierarchieknoten. Ihre Distanzen können daher gröber sein und sollten unter Berücksichtigung der Auflösung der Quelle interpretiert werden."
+    },
+    {
+      "en": "Relative separation", "pt": "Separação relativa", "es": "Separación relativa", "fr": "Séparation relative", "de": "Relative Distanz"
     }
   ]
 }

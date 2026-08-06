@@ -6,8 +6,15 @@ library(ggrepel)
 library(DT)
 library(shiny.i18n)
 
-load("taxobase.rda")
-load_cache("taxobase.rds")
+if (file.exists("taxobase.rds")) {
+  tryCatch(
+    load_cache("taxobase.rds"),
+    error = function(e) warning("Could not load the bundled lineage cache: ", conditionMessage(e))
+  )
+}
+
+MAX_MATRIX_TAXA <- 50L
+SHALLOW_LINEAGE_GUIDE <- 25L
 
 # ── Setup i18n ────────────────────────────────────────────────────────────────
 i18n <- Translator$new(translation_json_path = "translation.json")
@@ -20,6 +27,60 @@ parse_taxa_input <- function(text) {
   taxa <- trimws(taxa)
   taxa <- taxa[nchar(taxa) > 0]
   unique(taxa)
+}
+
+read_taxa_csv <- function(path) {
+  first_line <- readLines(path, n = 1L, warn = FALSE, encoding = "UTF-8")
+  separator <- if (length(first_line) && lengths(regmatches(first_line, gregexpr(";", first_line))) >
+                   lengths(regmatches(first_line, gregexpr(",", first_line)))) ";" else ","
+
+  with_header <- tryCatch(
+    read.table(
+      path,
+      header = TRUE,
+      sep = separator,
+      stringsAsFactors = FALSE,
+      check.names = FALSE,
+      fileEncoding = "UTF-8-BOM"
+    ),
+    error = function(e) NULL
+  )
+
+  accepted_headers <- c("taxon", "taxa", "species", "name", "scientific_name")
+  taxon_column <- if (!is.null(with_header)) {
+    match(TRUE, tolower(trimws(names(with_header))) %in% accepted_headers)
+  } else {
+    NA_integer_
+  }
+
+  values <- if (!is.na(taxon_column)) {
+    with_header[[taxon_column]]
+  } else {
+    without_header <- read.table(
+      path,
+      header = FALSE,
+      sep = separator,
+      stringsAsFactors = FALSE,
+      check.names = FALSE,
+      fileEncoding = "UTF-8-BOM"
+    )
+    if (ncol(without_header) < 1L) stop("The CSV file does not contain a taxon column.")
+    without_header[[1]]
+  }
+
+  values <- trimws(as.character(values))
+  unique(values[!is.na(values) & nzchar(values)])
+}
+
+example_taxa <- function() {
+  c(
+    "Tyrannosaurus",
+    "Velociraptor",
+    "Triceratops",
+    "Brachiosaurus",
+    "Homo",
+    "Quercus"
+  )
 }
 
 # ── Theme / UI ────────────────────────────────────────────────────────────────
@@ -135,6 +196,9 @@ app_theme <- bs_theme(
       border-bottom: 2px solid var(--rule);
       background: var(--card-bg);
       padding: 0 1.5rem;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: thin;
     }
     .nav-tabs .nav-link {
       font-family: 'Playfair Display', Georgia, serif;
@@ -145,6 +209,7 @@ app_theme <- bs_theme(
       padding: 0.75rem 1.1rem;
       border-radius: 0;
       transition: all 0.2s;
+      white-space: nowrap;
     }
     .nav-tabs .nav-link:hover { color: var(--border); }
     .nav-tabs .nav-link.active {
@@ -304,6 +369,33 @@ app_theme <- bs_theme(
       font-style: italic;
       margin: 0.1rem;
     }
+    .distance-track {
+      position: relative;
+      height: 8px;
+      width: 100%;
+      border-radius: 999px;
+      background: var(--rule);
+    }
+    .distance-marker {
+      position: absolute;
+      top: 50%;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      border: 2px solid var(--card-bg);
+      background: var(--branch);
+    }
+    .method-note {
+      margin: 0 1.5rem 1.5rem;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--rule);
+      border-left: 4px solid var(--branch);
+      border-radius: 3px;
+      background: var(--card-bg);
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
     .spinner-border { color: var(--border) !important; }
     .shiny-notification { font-family: 'Lora', serif; }
 
@@ -324,6 +416,20 @@ app_theme <- bs_theme(
       font-family: 'Playfair Display', serif;
       color: var(--border);
       font-size: 1rem;
+    }
+    @media (max-width: 768px) {
+      .app-header {
+        padding: 4.8rem 1.25rem 1.25rem;
+      }
+      .app-header h1 {
+        font-size: 1.75rem;
+      }
+      .nav-tabs {
+        padding: 0 0.5rem;
+      }
+      .nav-tabs .nav-link {
+        padding: 0.7rem 0.85rem;
+      }
     }
   ")
 
@@ -470,7 +576,8 @@ ui <- fluidPage(
                                  fileInput("dm_upload", i18n$t("Or upload CSV (one taxon per row)"),
                                            accept = ".csv", width = "100%",
                                            buttonLabel = gsub("<.*?>", "", i18n$t("Browse...")),
-                                           placeholder = gsub("<.*?>", "", i18n$t("No file selected")))
+                                           placeholder = gsub("<.*?>", "", i18n$t("No file selected"))),
+                                 uiOutput("dm_template_ui")
                              )
                            )
                     ),
@@ -585,7 +692,8 @@ ui <- fluidPage(
                                  fileInput("cc_upload", i18n$t("Or upload CSV (one taxon per row)"),
                                            accept = ".csv", width = "100%",
                                            buttonLabel = gsub("<.*?>", "", i18n$t("Browse...")),
-                                           placeholder = gsub("<.*?>", "", i18n$t("No file selected")))
+                                           placeholder = gsub("<.*?>", "", i18n$t("No file selected"))),
+                                 uiOutput("cc_template_ui")
                              )
                            )
                     ),
@@ -624,6 +732,11 @@ ui <- fluidPage(
                   )
               )
     )
+  ),
+  div(
+    class = "method-note",
+    icon("circle-info"),
+    tags$span(style = "margin-left:0.4rem;", textOutput("method_note", inline = TRUE))
   )
 )
 
@@ -692,8 +805,64 @@ server <- function(input, output, session) {
 
   # ── Dynamic UI Elements ─────────────────────────────────────────────────────
   output$app_subtitle <- renderText({
-    tr()("Taxonomic Distance & Phylogenetic Lineage Explorer — powered by The Taxonomicon")
+    tr()("Taxonomic Distance & Hierarchy Explorer — powered by The Taxonomicon")
   })
+
+  output$method_note <- renderText({
+    tr()("Distances represent depth in a taxonomic classification, not evolutionary time or phylogenetic branch length.")
+  })
+
+  output$dm_template_ui <- renderUI({
+    downloadButton(
+      "dm_template",
+      tr()("Download CSV template"),
+      class = "btn btn-outline-secondary btn-sm w-100"
+    )
+  })
+
+  output$cc_template_ui <- renderUI({
+    downloadButton(
+      "cc_template",
+      tr()("Download CSV template"),
+      class = "btn btn-outline-secondary btn-sm w-100"
+    )
+  })
+
+  plot_palette <- reactive({
+    if (identical(input$dark_mode_toggle, "dark")) {
+      list(
+        background = "#26211c",
+        ink = "#f4f1ea",
+        muted = "#b0a290",
+        rule = "#3d362e",
+        branch = "#c2946d",
+        point = "#e5c19d"
+      )
+    } else {
+      list(
+        background = "#f3ede0",
+        ink = "#3d2510",
+        muted = "#6b4c30",
+        rule = "#d9c9b0",
+        branch = "#8b5e3c",
+        point = "#5c3d1e"
+      )
+    }
+  })
+
+  output$dm_template <- downloadHandler(
+    filename = function() "taxodist-taxa-template.csv",
+    content = function(file) {
+      write.csv(data.frame(taxon = example_taxa()), file, row.names = FALSE, fileEncoding = "UTF-8")
+    }
+  )
+
+  output$cc_template <- downloadHandler(
+    filename = function() "taxodist-coverage-template.csv",
+    content = function(file) {
+      write.csv(data.frame(taxon = example_taxa()), file, row.names = FALSE, fileEncoding = "UTF-8")
+    }
+  )
 
   # ── Pairwise Distance ───────────────────────────────────────────────────────
 
@@ -720,7 +889,7 @@ server <- function(input, output, session) {
     req(nchar(trimws(input$pd_taxon_a)) > 0, nchar(trimws(input$pd_taxon_b)) > 0)
     session$sendCustomMessage("show_loading", list())
     on.exit(session$sendCustomMessage("hide_loading", list()))
-    withCallingHandlers(
+    tryCatch(
       taxo_distance(trimws(input$pd_taxon_a), trimws(input$pd_taxon_b), verbose = FALSE),
       error = function(e) { showNotification(conditionMessage(e), type = "error"); NULL }
     )
@@ -731,10 +900,10 @@ server <- function(input, output, session) {
     if (is.null(res)) return(div(class="p-3 text-muted fst-italic", tr()("Results will appear here.")))
 
     dist_fmt <- if (is.infinite(res$distance)) "∞" else
-      if (res$distance == 0) tr()("0 (ancestor)") else
+      if (res$distance == 0) tr()("0 (identical)") else
         round(res$distance, 6)
     interp <- if (is.infinite(res$distance)) tr()("No common ancestor found.")
-    else if (res$distance == 0) tr()("One taxon is an ancestor of the other.")
+    else if (res$distance == 0) tr()("The two inputs resolve to the same hierarchy node.")
     else tr()("MRCA at depth %d; distance = 1 / %d.", res$mrca_depth, res$mrca_depth)
 
     tagList(
@@ -763,8 +932,8 @@ server <- function(input, output, session) {
     if (is.null(res)) return(NULL)
     ta <- trimws(input$pd_taxon_a)
     tb <- trimws(input$pd_taxon_b)
-    lin_a <- get_lineage(ta)
-    lin_b <- get_lineage(tb)
+    lin_a <- tryCatch(get_lineage(ta), error = function(e) NULL)
+    lin_b <- tryCatch(get_lineage(tb), error = function(e) NULL)
     if (is.null(lin_a) || is.null(lin_b)) return(NULL)
 
     mrca_d <- res$mrca_depth
@@ -816,23 +985,44 @@ server <- function(input, output, session) {
 
   observeEvent(input$dm_upload, {
     req(input$dm_upload)
-    df <- tryCatch(read.csv(input$dm_upload$datapath, header = FALSE, stringsAsFactors = FALSE),
-                   error = function(e) NULL)
-    if (!is.null(df)) {
-      taxa_str <- paste(as.character(df[[1]]), collapse = "\n")
-      updateTextAreaInput(session, "dm_taxa", value = taxa_str)
+    taxa <- tryCatch(
+      read_taxa_csv(input$dm_upload$datapath),
+      error = function(e) {
+        showNotification(conditionMessage(e), type = "error")
+        character(0)
+      }
+    )
+    if (length(taxa) > 0L) {
+      updateTextAreaInput(session, "dm_taxa", value = paste(taxa, collapse = "\n"))
+      showNotification(tr()("Loaded %d unique taxa from CSV.", length(taxa)), type = "message")
     }
   })
 
   dm_result <- eventReactive(input$dm_run, {
     taxa <- parse_taxa_input(input$dm_taxa)
     req(length(taxa) >= 2)
+    if (length(taxa) > MAX_MATRIX_TAXA) {
+      showNotification(
+        tr()("Distance matrices are limited to %d taxa in the web app.", MAX_MATRIX_TAXA),
+        type = "warning",
+        duration = 8
+      )
+      return(NULL)
+    }
     session$sendCustomMessage("show_loading", list())
     on.exit(session$sendCustomMessage("hide_loading", list()))
-    withCallingHandlers(
+    result <- tryCatch(
       distance_matrix(taxa, verbose = FALSE, progress = FALSE),
       error = function(e) { showNotification(conditionMessage(e), type = "error"); NULL }
     )
+    if (!is.null(result) && (anyNA(result) || any(!is.finite(result)))) {
+      showNotification(
+        tr()("Some distances are missing or infinite. The table is available, but clustering and ordination require a complete finite matrix."),
+        type = "warning",
+        duration = 10
+      )
+    }
+    result
   })
 
 
@@ -868,6 +1058,12 @@ server <- function(input, output, session) {
   output$dm_dendro <- renderPlot({
     dm <- dm_result()
     req(dm)
+    validate(need(
+      !anyNA(dm) && all(is.finite(dm)),
+      tr()("Clustering requires a complete matrix with finite distances.")
+    ))
+
+    pal <- plot_palette()
 
     hc <- hclust(dm, method = "average")
     n  <- length(hc$labels)
@@ -920,84 +1116,133 @@ server <- function(input, output, session) {
 
     node_df <- data.frame(x = node_y, y = node_x, mrca = node_mrca, stringsAsFactors = FALSE)
     node_df <- node_df[!is.na(node_df$mrca), ]
+    if (n > 20L) node_df <- node_df[0, , drop = FALSE]
 
     max_dist  <- max(hc$height)
+    if (!is.finite(max_dist) || max_dist <= 0) max_dist <- 1
     max_chars <- max(nchar(hc$labels))
     label_gap   <- max_dist * 0.000001
     label_width <- max_chars * max_dist * 0.018
 
     ggplot() +
       geom_segment(data = seg_list, aes(x = x, xend = xend, y = y, yend = yend),
-                   colour = "#5c3d1e", linewidth = 1.1) +
+                   colour = pal$point, linewidth = 1.1) +
       geom_text(data = tip_df, aes(x = x, label = label),
-                y = -label_gap, hjust = 0, vjust = 0.5, size = 5.5,
-                family = "serif", fontface = "italic", colour = "#3d2510") +
+                y = -label_gap, hjust = 0, vjust = 0.5,
+                size = max(3, 5.2 - n * 0.05),
+                family = "serif", fontface = "italic", colour = pal$ink) +
       geom_text(data = node_df, aes(x = x, y = y, label = mrca),
-                hjust = 0.5, vjust = -0.65, size = 6,
-                family = "serif", fontface = "italic", colour = "#8b5e3c") +
+                hjust = 0.5, vjust = -0.65, size = 4.2,
+                family = "serif", fontface = "italic", colour = pal$branch) +
       geom_point(data = node_df, aes(x = x, y = y),
-                 colour = "#8b5e3c", fill = "#f3ede0", shape = 21, size = 3.5, stroke = 1.4) +
+                 colour = pal$branch, fill = pal$background, shape = 21, size = 3.2, stroke = 1.2) +
       coord_flip(clip = "off") +
       scale_y_reverse(limits = c(max_dist * 1.04, -(label_gap + label_width)),
                       expand = expansion(mult = c(0.05, 0.7))) +
       scale_x_continuous(expand = expansion(mult = 0.05)) +
-      labs(x = NULL, y = NULL) +
+      labs(x = NULL, y = tr()("Taxonomic hierarchy distance")) +
       theme_minimal(base_family = "serif") +
       theme(
-        axis.text       = element_blank(),
-        axis.ticks      = element_blank(),
+        axis.text.x     = element_text(color = pal$muted, size = 8),
+        axis.text.y     = element_blank(),
+        axis.ticks.y    = element_blank(),
+        axis.title.x    = element_text(color = pal$muted, size = 9),
         panel.grid      = element_blank(),
-        plot.background = element_rect(fill = "#f3ede0", colour = NA),
+        plot.background = element_rect(fill = pal$background, colour = NA),
+        panel.background = element_rect(fill = pal$background, colour = NA),
         plot.margin     = margin(10, 10, 10, 10)
       )
-  }, bg = "#f3ede0")
+  }, bg = "transparent")
 
   output$dm_table <- renderDT({
     dm <- dm_result()
     req(dm)
+    pal <- plot_palette()
     mat     <- as.matrix(dm)
     mat_fmt <- round(mat, 5)
-    datatable(mat_fmt,
-              options = list(pageLength = 20, dom = "tip", scrollX = TRUE),
-              class = "compact hover"
-    ) |>
-      formatStyle(columns = colnames(mat_fmt),
-                  background = styleInterval(c(0.05, 0.15, 0.3),
-                                             c("#e8dcc8", "#f0e8d8", "#faf6ee", "#f5e6d8"))
-      )
+    table <- datatable(
+      mat_fmt,
+      options = list(pageLength = 20, dom = "tip", scrollX = TRUE),
+      class = "compact hover"
+    )
+
+    finite_values <- mat[is.finite(mat)]
+    if (length(finite_values) > 0L && diff(range(finite_values)) > 0) {
+      cuts <- seq(min(finite_values), max(finite_values), length.out = 5)[2:4]
+      table_colors <- if (identical(input$dark_mode_toggle, "dark")) {
+        c("#493522", "#3d3025", "#332a23", "#2a241f")
+      } else {
+        c("#d9c9b0", "#e8dcc8", "#f0e8d8", "#faf6ee")
+      }
+      table <- table |>
+        formatStyle(
+          columns = colnames(mat_fmt),
+          background = styleInterval(
+            cuts,
+            table_colors
+          ),
+          color = pal$ink
+        )
+    }
+    table
   })
 
   output$dm_pcoa <- renderPlot({
     dm <- dm_result()
     req(dm)
 
+    validate(need(
+      !anyNA(dm) && all(is.finite(dm)),
+      tr()("Ordination requires a complete matrix with finite distances.")
+    ))
+
+    pal <- plot_palette()
     ord <- taxo_ordinate(dm, k = 2)
+    validate(need(!is.null(ord$points), tr()("Ordination could not be computed.")))
     df <- as.data.frame(ord$points)
     colnames(df) <- c("PC1", "PC2")
     df$Taxon <- rownames(df)
 
     gof_pct <- round(ord$GOF[1] * 100, 1)
+    pcoa_subtitle <- tr()("Goodness-of-fit: %s%%", gof_pct)
+    if (is.finite(gof_pct) && gof_pct < 50) {
+      pcoa_subtitle <- paste(
+        pcoa_subtitle,
+        tr()("Limited two-dimensional representation."),
+        sep = " — "
+      )
+    }
+    eig_pos <- ord$eig[ord$eig > 0]
+    var_pct <- 100 * eig_pos / sum(eig_pos)
+    pc1_label <- tr()("Coordinate 1")
+    pc2_label <- tr()("Coordinate 2")
+    if (length(var_pct) >= 2L) {
+      pc1_label <- sprintf("%s (%.1f%%)", pc1_label, var_pct[1])
+      pc2_label <- sprintf("%s (%.1f%%)", pc2_label, var_pct[2])
+    }
 
     ggplot(df, aes(x = PC1, y = PC2, label = Taxon)) +
-      geom_hline(yintercept = 0, linetype = "dashed", color = "#d9c9b0", linewidth = 0.5) +
-      geom_vline(xintercept = 0, linetype = "dashed", color = "#d9c9b0", linewidth = 0.5) +
-      geom_point(color = "#8b5e3c", fill = "#f3ede0", shape = 21, size = 3.5, stroke = 1.4) +
+      geom_hline(yintercept = 0, linetype = "dashed", color = pal$rule, linewidth = 0.5) +
+      geom_vline(xintercept = 0, linetype = "dashed", color = pal$rule, linewidth = 0.5) +
+      geom_point(color = pal$branch, fill = pal$background, shape = 21, size = 3.5, stroke = 1.4) +
       geom_text_repel(
-        family = "serif", fontface = "italic", color = "#3d2510", size = 5,
+        family = "serif", fontface = "italic", color = pal$ink, size = 4.2,
         box.padding = 0.5, point.padding = 0.3,
-        segment.color = "#d9c9b0", segment.alpha = 0.6
+        segment.color = pal$rule, segment.alpha = 0.6
       ) +
-      labs(x = tr()("Coordinate 1"), y = tr()("Coordinate 2"),
-           subtitle = tr()("Goodness-of-fit: %s%%", gof_pct)) +
+      labs(x = pc1_label, y = pc2_label, subtitle = pcoa_subtitle) +
       theme_minimal(base_family = "serif") +
       theme(
-        panel.grid.major = element_line(color = "#e8dcc8"),
+        text = element_text(color = pal$ink),
+        axis.text = element_text(color = pal$muted),
+        panel.grid.major = element_line(color = pal$rule),
         panel.grid.minor = element_blank(),
-        plot.background  = element_rect(fill = "#f3ede0", colour = NA),
+        plot.background  = element_rect(fill = pal$background, colour = NA),
+        panel.background = element_rect(fill = pal$background, colour = NA),
         plot.margin      = margin(10, 20, 10, 10),
-        plot.subtitle    = element_text(color = "#6b4c30", face = "italic")
+        plot.subtitle    = element_text(color = pal$muted, face = "italic")
       )
-  }, bg = "#f3ede0")
+  }, bg = "transparent")
 
   # ── Closest Relative ────────────────────────────────────────────────────────
 
@@ -1015,23 +1260,21 @@ server <- function(input, output, session) {
     on.exit(session$sendCustomMessage("hide_loading", list()))
 
     query <- trimws(input$cr_query)
-    dist_df <- withCallingHandlers(
+    dist_df <- tryCatch(
       closest_relative(query, candidates, verbose = FALSE),
       error = function(e) { showNotification(conditionMessage(e), type = "error"); NULL }
     )
     if (is.null(dist_df)) return(NULL)
 
-    query_depth <- lineage_depth(query)
+    query_depth <- tryCatch(lineage_depth(query), error = function(e) NULL)
     cand_depths <- sapply(candidates, function(t) {
-      d <- lineage_depth(t)
+      d <- tryCatch(lineage_depth(t), error = function(e) NULL)
       if (is.null(d)) NA_integer_ else as.integer(d)
     })
     dist_df$depth <- cand_depths[dist_df$taxon]
 
     list(df = dist_df, query = query, query_depth = query_depth)
   })
-
-  SHALLOW_THRESHOLD <- 25L
 
   output$cr_result_ui <- renderUI({
     res <- cr_result()
@@ -1042,16 +1285,19 @@ server <- function(input, output, session) {
     query_depth <- res$query_depth
     closest     <- df[1, ]
 
-    max_dist <- max(df$distance, na.rm = TRUE)
-    if (is.na(max_dist) || max_dist == 0) max_dist <- 1
+    finite_distances <- df$distance[is.finite(df$distance)]
+    max_dist <- if (length(finite_distances) > 0L) max(finite_distances) else 1
+    if (!is.finite(max_dist) || max_dist <= 0) max_dist <- 1
 
-    any_shallow <- any(!is.na(df$depth) & df$depth < SHALLOW_THRESHOLD)
+    any_shallow <- any(!is.na(df$depth) & df$depth < SHALLOW_LINEAGE_GUIDE)
 
     rows <- lapply(seq_len(nrow(df)), function(i) {
       row      <- df[i, ]
-      bar_pct  <- if (is.na(row$distance)) 0L else round(100 * row$distance / max_dist)
-      bar_col  <- if (i == 1L) "#5c3d1e" else "#8b5e3c"
-      is_shallow <- !is.na(row$depth) && row$depth < SHALLOW_THRESHOLD
+      marker_pct <- if (is.na(row$distance)) 0L else if (is.infinite(row$distance)) 100L else
+        round(100 * row$distance / max_dist)
+      marker_pct <- min(100L, max(0L, marker_pct))
+      marker_col <- if (i == 1L) "#5c3d1e" else "#8b5e3c"
+      is_shallow <- !is.na(row$depth) && row$depth < SHALLOW_LINEAGE_GUIDE
       depth_lbl  <- if (is.na(row$depth)) "?" else as.character(row$depth)
       warn_icon  <- if (is_shallow) " ⚠" else ""
 
@@ -1063,14 +1309,21 @@ server <- function(input, output, session) {
         ),
         tags$td(
           style = "padding:0.4rem 0.6rem; font-family:'DM Mono',monospace; font-size:0.82rem;",
-          if (is.na(row$distance)) "NA" else round(row$distance, 6)
+          if (is.na(row$distance)) "NA" else if (is.infinite(row$distance)) "∞" else round(row$distance, 6)
         ),
         tags$td(
           style = "padding:0.4rem 0.6rem; font-family:'DM Mono',monospace; font-size:0.78rem; color:#6b4c30;",
           depth_lbl
         ),
-        tags$td(style = "padding:0.4rem 0.6rem; width:35%;",
-                div(style = sprintf("height:10px; width:%d%%; background:%s; border-radius:2px;", bar_pct, bar_col), "")
+        tags$td(style = "padding:0.4rem 0.9rem; width:35%;",
+                div(
+                  class = "distance-track",
+                  title = tr()("Left is closer; right is more distant."),
+                  div(
+                    class = "distance-marker",
+                    style = sprintf("left:%d%%; background:%s;", marker_pct, marker_col)
+                  )
+                )
         )
       )
     })
@@ -1091,7 +1344,7 @@ server <- function(input, output, session) {
         div(
           style = "background:#faf6ee; border:1px solid #d9c9b0; border-left:4px solid #8b5e3c; border-radius:3px; padding:0.7rem 1rem; margin-bottom:0.8rem; font-size:0.83rem; color:#6b4c30;",
           tags$b(tr()("⚠ Data quality notice: ")),
-          tr()("One or more taxa have a shallow lineage depth (< 25 nodes) in The Taxonomicon, meaning they are poorly resolved in the database. Their distances may be artificially large and rankings unreliable. Check the Lineage Explorer tab for details.")
+          tr()("One or more taxa have relatively few hierarchy nodes in The Taxonomicon. Their distances may therefore be coarser and should be interpreted with attention to source resolution.")
         ),
       card(
         card_header(tr()("All candidates ranked")),
@@ -1103,7 +1356,7 @@ server <- function(input, output, session) {
                 tags$th(style="padding:0.4rem 0.6rem;", tr()("Taxon")),
                 tags$th(style="padding:0.4rem 0.6rem;", tr()("Distance")),
                 tags$th(style="padding:0.4rem 0.6rem;", tr()("Depth")),
-                tags$th(style="padding:0.4rem 0.6rem;", "")
+                tags$th(style="padding:0.4rem 0.6rem;", tr()("Relative separation"))
               )),
               tags$tbody(rows)
             )
@@ -1118,7 +1371,7 @@ server <- function(input, output, session) {
     req(nchar(trimws(input$le_taxon)) > 0)
     session$sendCustomMessage("show_loading", list())
     on.exit(session$sendCustomMessage("hide_loading", list()))
-    withCallingHandlers(
+    tryCatch(
       get_lineage(trimws(input$le_taxon), verbose = FALSE),
       error = function(e) { showNotification(conditionMessage(e), type = "error"); NULL }
     )
@@ -1166,7 +1419,7 @@ server <- function(input, output, session) {
     session$sendCustomMessage("show_loading", list())
     on.exit(session$sendCustomMessage("hide_loading", list()))
 
-    withCallingHandlers(
+    tryCatch(
       taxo_search(trimws(input$sd_taxon), verbose = FALSE),
       error = function(e) { showNotification(conditionMessage(e), type = "error"); NULL }
     )
@@ -1204,11 +1457,16 @@ server <- function(input, output, session) {
 
   observeEvent(input$cc_upload, {
     req(input$cc_upload)
-    df <- tryCatch(read.csv(input$cc_upload$datapath, header = FALSE, stringsAsFactors = FALSE),
-                   error = function(e) NULL)
-    if (!is.null(df)) {
-      taxa_str <- paste(as.character(df[[1]]), collapse = "\n")
-      updateTextAreaInput(session, "cc_taxa", value = taxa_str)
+    taxa <- tryCatch(
+      read_taxa_csv(input$cc_upload$datapath),
+      error = function(e) {
+        showNotification(conditionMessage(e), type = "error")
+        character(0)
+      }
+    )
+    if (length(taxa) > 0L) {
+      updateTextAreaInput(session, "cc_taxa", value = paste(taxa, collapse = "\n"))
+      showNotification(tr()("Loaded %d unique taxa from CSV.", length(taxa)), type = "message")
     }
   })
 
@@ -1217,7 +1475,7 @@ server <- function(input, output, session) {
     req(length(taxa) >= 1)
     session$sendCustomMessage("show_loading", list())
     on.exit(session$sendCustomMessage("hide_loading", list()))
-    withCallingHandlers(
+    tryCatch(
       check_coverage(taxa, verbose = FALSE),
       error = function(e) { showNotification(conditionMessage(e), type = "error"); NULL }
     )
@@ -1276,7 +1534,7 @@ server <- function(input, output, session) {
     on.exit(session$sendCustomMessage("hide_loading", list()))
     list(
       all   = taxa,
-      kept  = withCallingHandlers(
+      kept  = tryCatch(
         filter_clade(taxa, clade, verbose = FALSE),
         error = function(e) { showNotification(conditionMessage(e), type = "error"); character(0) }
       ),
